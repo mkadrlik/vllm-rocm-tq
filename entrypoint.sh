@@ -21,7 +21,10 @@ echo "[vllm-rocm-tq] Quantization: ${QUANTIZATION:-compressed-tensors}"
 # ─── Model Arguments ─────────────────────────────────────────────────────────
 MODEL="${MODEL_NAME:-Qwen/Qwen2.5-0.5B-Instruct-AWQ}"
 SERVED_NAME="${SERVED_MODEL_NAME:-$(echo $MODEL | sed 's|.*/||;s|-.*||')}"
-QUANT="${QUANTIZATION:-compressed-tensors}"
+# Use 'awq' by default — ROCR_VISIBLE_DEVICES avoids the Triton error 101
+# that previously required the compressed-tensors workaround.
+# vLLM 0.24.0 validates that --quantization matches the model config.
+QUANT="${QUANTIZATION:-awq}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-32768}"
 GPU_MEM_UTIL="${GPU_MEMORY_UTILIZATION:-0.85}"
 TENSOR_PARALLEL="${TENSOR_PARALLEL_SIZE:-1}"
@@ -39,6 +42,5 @@ exec python3 -m vllm.entrypoints.openai.api_server \
   --quantization "$QUANT" \
   --trust-remote-code \
   --enforce-eager \
-  --device rocm \
   --disable-log-stats \
   $EXTRA_ARGS
